@@ -42,6 +42,13 @@ class BasicBlock(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv3x3(planes, planes, stride=1, dilation=dilation)
         self.bn2 = nn.BatchNorm2d(planes)
+        
+        self.conv3=conv3x3(planes,planes,stride=1,dilation=dilation)
+        self.bn3 = nn.BatchNorm2d(planes)
+
+        self.cspconv=conv3x3(planes,planes,stride=1,dilation=dilation)
+        self.bncsp = nn.BatchNorm2d(planes)
+
         self.downsample = downsample
         self.stride = stride
 
@@ -51,17 +58,28 @@ class BasicBlock(nn.Module):
         out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
-
+        out1=out
+        # het lop 1
+        #csp layer 
+        outcsp=self.cspconv(out1)
+        outcsp=self.bncsp(outcsp)
+        outcsp=self.relu(outcsp)
+        #finish csp
         out = self.conv2(out)
         out = self.bn2(out)
-
+        out  =self .relu(out)
+        # het lop 2
+        out = self.conv3(out)
+        out = self.bn3(out)
+        
+        out1= torch.cat([outcsp,out],1)
         if self.downsample is not None:
             residual = self.downsample(x)
 
-        out += residual
-        out = self.relu(out)
+        out1 += residual
+        out1 = self.relu(out1)
 
-        return out
+        return out1
 
 
 class Bottleneck(nn.Module):

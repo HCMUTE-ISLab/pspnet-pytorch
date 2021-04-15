@@ -14,7 +14,7 @@ from pspnet import PSPNet
 
 
 models = {
-    'squeezenet': lambda: PSPNet(sizes=(1, 2, 3, 6), psp_size=512, deep_features_size=256, backend='squeezenet'),
+    'squeezenet': lambda: PSPNet(sizes=(1, 2, 3, 6), psp_size =512, deep_features_size=256, backend='squeezenet'),
     'densenet': lambda: PSPNet(sizes=(1, 2, 3, 6), psp_size=1024, deep_features_size=512, backend='densenet'),
     'resnet18': lambda: PSPNet(sizes=(1, 2, 3, 6), psp_size=512, deep_features_size=256, backend='resnet18'),
     'resnet34': lambda: PSPNet(sizes=(1, 2, 3, 6), psp_size=512, deep_features_size=256, backend='resnet34'),
@@ -41,7 +41,7 @@ def build_network(snapshot, backend):
 @click.command()
 @click.option('--data-path', type=str, help='Path to dataset folder')
 @click.option('--models-path', type=str, help='Path for storing model snapshots')
-@click.option('--backend', type=str, default='resnet34', help='Feature extractor')
+@click.option('--backend', type=str, default='resnet18', help='Feature extractor')
 @click.option('--snapshot', type=str, default=None, help='Path to pretrained weights')
 @click.option('--crop_x', type=int, default=256, help='Horizontal random crop size')
 @click.option('--crop_y', type=int, default=256, help='Vertical random crop size')
