@@ -11,6 +11,7 @@ import click
 import numpy as np
 
 from pspnet import PSPNet
+from dataset import Camvid
 
 
 models = {
@@ -51,13 +52,18 @@ def build_network(snapshot, backend):
 @click.option('--gpu', type=str, default='0', help='List of GPUs for parallel training, e.g. 0,1,2,3')
 @click.option('--start-lr', type=float, default=0.001)
 @click.option('--milestones', type=str, default='10,20,30', help='Milestones for LR decreasing')
-def train(data_path, models_path, backend, snapshot, crop_x, crop_y, batch_size, alpha, epochs, start_lr, milestones, gpu):
+
+def train(backend = 'resnet18', snapshot = None, crop_x = 256, crop_y = 256, batch_size=4,\
+          alpha = 1.0, epochs=30, start_lr=0.001, milestones = '10,20,30', gpu = '0'):
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu
     net, starting_epoch = build_network(snapshot, backend)
-    data_path = os.path.abspath(os.path.expanduser(data_path))
-    models_path = os.path.abspath(os.path.expanduser(models_path))
-    os.makedirs(models_path, exist_ok=True)
-    
+   
+   
+    # models_path = os.path.abspath(os.path.expanduser(models_path))
+    # os.makedirs(models_path, exist_ok=True)
+    print('--------------------')
+
+
     '''
         To follow this training routine you need a DataLoader that yields the tuples of the following format:
         (Bx3xHxW FloatTensor x, BxHxW LongTensor y, BxN LongTensor y_cls) where
@@ -66,33 +72,46 @@ def train(data_path, models_path, backend, snapshot, crop_x, crop_y, batch_size,
         y_cls - batch of 1D tensors of dimensionality N: N total number of classes, 
         y_cls[i, T] = 1 if class T is present in image i, 0 otherwise
     '''
-    train_loader, class_weights, n_images = None, None, None
     
+    
+    train_loader, class_weights, n_images = None, None, None
+
+
+
+    print(f'Loading data......')
+
+#     camvid = Camvid()
+    loader = DataLoader(camvid, batch_size=4, num_workers= 0)
+    print(f'Loaded')
     optimizer = optim.Adam(net.parameters(), lr=start_lr)
     scheduler = MultiStepLR(optimizer, milestones=[int(x) for x in milestones.split(',')])
     
     for epoch in range(starting_epoch, starting_epoch + epochs):
-        seg_criterion = nn.NLLLoss2d(weight=class_weights)
-        cls_criterion = nn.BCEWithLogitsLoss(weight=class_weights)
+        seg_criterion = nn.NLLLoss2d()
+        cls_criterion = nn.BCEWithLogitsLoss()
         epoch_losses = []
-        train_iterator = tqdm(loader, total=max_steps // batch_size + 1)
+        train_iterator = tqdm(loader, total= len(camvid) // batch_size + 1)
         net.train()
         for x, y, y_cls in train_iterator:
-            steps += batch_size
+            # steps += batch_size
             optimizer.zero_grad()
             x, y, y_cls = Variable(x).cuda(), Variable(y).cuda(), Variable(y_cls).cuda()
+            x = x.permute(0,3,1,2)
+            print(x.shape)
+
             out, out_cls = net(x)
             seg_loss, cls_loss = seg_criterion(out, y), cls_criterion(out_cls, y_cls)
             loss = seg_loss + alpha * cls_loss
             epoch_losses.append(loss.data[0])
             status = '[{0}] loss = {1:0.5f} avg = {2:0.5f}, LR = {5:0.7f}'.format(
                 epoch + 1, loss.data[0], np.mean(epoch_losses), scheduler.get_lr()[0])
+            print(status)
             train_iterator.set_description(status)
             loss.backward()
             optimizer.step()
         scheduler.step()
         torch.save(net.state_dict(), os.path.join(models_path, '_'.join(["PSPNet", str(epoch + 1)])))
-        train_loss = np.mean(epoch_losses)
+        train_loss = np.mean(epoch_losses)        
 
         
 if __name__ == '__main__':

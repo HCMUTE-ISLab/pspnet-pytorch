@@ -42,13 +42,8 @@ class PSPUpsample(nn.Module):
 
 
 class PSPNet(nn.Module):
-<<<<<<< HEAD
-    def __init__(self, n_classes=18, sizes=(1, 2, 3, 6), psp_size=2048, deep_features_size=1024, backend='resnet34',
-                 pretrained=False):
-=======
     def __init__(self, n_classes=18, sizes=(1, 2, 3, 6), psp_size=2048, deep_features_size=1024, backend='resnet18',
-                 pretrained=True):
->>>>>>> 627e11741f1bb013d310d783ef159610585b4df7
+                 pretrained=False):
         super().__init__()
         self.feats = getattr(extractors, backend)(pretrained)
         
@@ -80,25 +75,25 @@ class PSPNet(nn.Module):
     def forward(self, x):
         f, class_f = self.feats(x) 
         #CSP
-        split = f.shape[1] // 2
-        p1 = f[:, :split]
-        p2 = f[:, split:]
+        # split = f.shape[1] // 2
+        # p1 = f[:, :split]
+        # p2 = f[:, split:]
 
-        p2 = self.psp(p2)
-        p2 = self.drop_1(p2)
+        # p2 = self.psp(p2)
+        # p2 = self.drop_1(p2)
 
-        print(p2.shape)
-        # p = self.psp(f)
-        # p = self.drop_1(p)
+        # print(p2.shape)
+        p = self.psp(f)
+        p = self.drop_1(p)
 
-        # p = self.up_1(p)
-        # p = self.drop_2(p)
+        p = self.up_1(p)
+        p = self.drop_2(p)
 
-        # p = self.up_2(p)
-        # p = self.drop_2(p)
+        p = self.up_2(p)
+        p = self.drop_2(p)
 
-        # p = self.up_3(p)
-        # p = self.drop_2(p)
+        p = self.up_3(p)
+        p = self.drop_2(p)
 
         auxiliary = F.adaptive_max_pool2d(input=class_f, output_size=(1, 1)).view(-1, class_f.size(1))
 

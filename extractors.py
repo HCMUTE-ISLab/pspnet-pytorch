@@ -35,7 +35,7 @@ def conv3x3(in_planes, out_planes, stride=1, dilation=1):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, dilation=1):
+    def __init__(self, inplanes, planes, stride=1, downsample=False, dilation=1):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(inplanes, planes, stride=stride, dilation=dilation)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -71,13 +71,27 @@ class BasicBlock(nn.Module):
         # het lop 2
         out = self.conv3(out)
         out = self.bn3(out)
-        
+        # print(f' after pipe {out.shape}')
+   
         out1= torch.cat([outcsp,out],1)
-        if self.downsample is not None:
-            residual = self.downsample(x)
+        # print(out1.shape)
+        # print(out.shape)
+        # temp = nn.Conv2d(out1.shape[1], residual.shape[1], padding = 1, kernel_size=3)
+        # temp.to('cuda:0')
+        
+        # out1 = temp(out1)
+
+        # if self.downsample is not None:
+        #     residual = self.downsample(x)
+        # # if (out1.shape != residual.shape):
+        # #     assert f'{out1.shape}  {residual.shape}'
+     
+        # print(f'before out1 {out1.shape}')
+        # print(f'before res {residual.shape}')
 
         out1 += residual
         out1 = self.relu(out1)
+        # print(out1)
 
         return out1
 
