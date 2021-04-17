@@ -51,8 +51,8 @@ class BasicBlock(nn.Module):
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = norm_layer(planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(planes, planes)
-        self.bn2 = norm_layer(planes)
+        self.conv2 = conv3x3(planes//2, planes//2)
+        self.bn2 = norm_layer(planes//2)
         self.downsample = downsample
         self.stride = stride
 
@@ -63,12 +63,18 @@ class BasicBlock(nn.Module):
         out = self.bn1(out)
         out = self.relu(out)
 
-        out = self.conv2(out)
-        out = self.bn2(out)
+        split = out.shape[1] // 2
+        outcsp = out[:,:split]
+        outskip = out[:,split:]
+
+        outcsp = self.conv2(outcsp)
+        outcsp = self.bn2(outcsp)
 
         if self.downsample is not None:
             identity = self.downsample(x)
-
+        
+        out = torch.cat([outcsp, outskip], 1)
+        
         out += identity
         out = self.relu(out)
 

@@ -71,9 +71,6 @@ class Camvid(Dataset):
         self.km = KMeans(32)
         self.km.fit(colors)
 
-
-
-
         self.image_path = image_path
         self.mask_path = mask_path
         self.filename =os.listdir(self.image_path)
